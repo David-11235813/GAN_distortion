@@ -26,7 +26,7 @@ user_project/env/
 Thumbs.db
 
 # Dataset (read-only, do not track)
-#dataset/
+dataset/
 
 # Middleman: avoid checking heavy model files; keep index if useful
 #middleman/models/
@@ -37,3 +37,6 @@ Thumbs.db
 # Logs / temp
 *.log
 tmp/
+
+# GAN_user: generated images (work in progress)
+GAN_user/generated
