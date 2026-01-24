@@ -1,11 +1,16 @@
 import sys
-from utils_UI import *
 from PySide6.QtWidgets import QApplication
 
+from utils_UI import MainWindow
 
 
-if __name__ == '__main__':
+
+def main():
     app = QApplication(sys.argv)
     win = MainWindow()
     win.show()
     sys.exit(app.exec())
+
+
+if __name__ == '__main__':
+    main()
