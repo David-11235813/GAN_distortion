@@ -2,10 +2,10 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-
+import os
 
 import time
-from main import *
+
 
 # ---- Hyperparameters ----
 latent_dim = 100
