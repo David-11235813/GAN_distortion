@@ -5,7 +5,7 @@ from typing import List
 from PIL import Image
 import torch
 
-from testing_code import *
+from _testing_code import *
 
 
 def log(text):

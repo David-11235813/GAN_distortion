@@ -1,10 +1,10 @@
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torchvision import transforms, datasets
-from torch.utils.data import DataLoader
 import matplotlib.pyplot as plt
 
+device='cuda' if torch.cuda.is_available() else 'cpu'
 
 # Encoder: Compresses image to feature vector
 class Encoder(nn.Module):
@@ -84,7 +84,7 @@ class Autoencoder(nn.Module):
 
 
 # Training function
-def train_autoencoder(model, dataloader, epochs=10, device='cuda' if torch.cuda.is_available() else 'cpu'):
+def train_autoencoder(model, dataloader, epochs=10, device=device):
     model = model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=0.0002)
     criterion = nn.MSELoss()  # Measures how different reconstruction is from original
@@ -111,8 +111,15 @@ def train_autoencoder(model, dataloader, epochs=10, device='cuda' if torch.cuda.
     return model
 
 
+
+def LoadAutoencoder():
+    gen = Autoencoder().to(device)
+    gen.load_state_dict(torch.load(os.path.join("autoencoder.pth"), map_location=device))
+    gen.eval()
+    return gen
+
 # Visualization function
-def show_reconstruction(model, dataloader, device='cuda' if torch.cuda.is_available() else 'cpu'):
+def show_reconstruction(model, dataloader, device=device):
     model.eval()
     with torch.no_grad():
         images, _ = next(iter(dataloader))

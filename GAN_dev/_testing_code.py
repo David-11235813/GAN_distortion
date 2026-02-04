@@ -92,7 +92,11 @@ def testing():
     app = QApplication(sys.argv)
 
     # Change this path to your image file
-    IMAGE_PATH = "hi.jpg"
+    print("choose image file, the cat isn't available.")
+    return
+
+    #IMAGE_PATH = "hi.jpg"
+    IMAGE_PATH = None
     #IMAGE_PATH = select_image_file()
 
     window = ImageWindow(IMAGE_PATH)

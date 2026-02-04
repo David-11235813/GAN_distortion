@@ -21,7 +21,9 @@ transform = transforms.Compose([
     transforms.Normalize((0.5,), (0.5,))
 ])
 
-dataset_path = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'dataset'))
+dataset_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.pardir, 'dataset')
+)
 
 dataset = datasets.MNIST(
     root=dataset_path,
@@ -102,9 +104,9 @@ for epoch in range(epochs):
 
 
 
-mid_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir, 'middleman_folder'))
-
-models_dir = os.path.join(mid_dir, 'models')
+models_dir = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), os.pardir, 'middleman_folder', 'models')
+)
 os.makedirs(models_dir, exist_ok=True)
 
 run_dir = os.path.join(models_dir, time.strftime("%Y%m%d-%H%M%S"))
