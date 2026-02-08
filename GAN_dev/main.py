@@ -2,48 +2,53 @@
 # python -m pip install --upgrade pip setuptools wheel
 # pip install --index-url https://download.pytorch.org/whl/cu126 torch torchvision torchaudio
 
-
-import torch
-
-from utilise_dataset import get_default_dataloader, my_dataset_path, test_dataloader
-from autoencoder import Autoencoder, train_autoencoder, show_reconstruction, LoadAutoencoder
+import time
+from utilise_dataset import get_default_dataloader, default_dataset_path, test_dataloader
+from autoencoder import Autoencoder, train_autoencoder, show_reconstruction, load_and_test_model_from_path, load_and_test_model_from_directory
 from testing import *
+import my_filesystem
 
 
-
-
-
-def main():
+def main(epochs=50):
     # Set up image preprocessing: transformer and feeder of images
-    dataloader = get_default_dataloader(my_dataset_path)
+    dataloader = get_default_dataloader(default_dataset_path)
     #test_dataloader(dataloader, 5)
 
     # Create and train autoencoder
-    model = Autoencoder(latent_dim=512)
+    autoencoder = Autoencoder(latent_dim=512)
     print("Training autoencoder...")
-    model = train_autoencoder(model, dataloader, epochs=10)
+    autoencoder = train_autoencoder(autoencoder, dataloader, epochs=epochs)
 
     # Visualize results
-    show_reconstruction(model, dataloader)
+    show_reconstruction(autoencoder, dataloader)
 
-    # Save the trained model
-    torch.save(model.state_dict(), 'autoencoder.pth')
-    print("Model saved to autoencoder.pth")
+    # Save the trained autoencoder
+    save_path = my_filesystem.save_model(autoencoder, ['Autoencoders'], 'autoencoder_nogan_MSE_50ep.pth', True)
+    print(f"Autoencoder saved to {save_path}")
+
+    load_and_test_model_from_path(save_path, howmany=3)
 
 
 
-def load_and_test_autoencoder():
 
-    dataloader = get_default_dataloader(my_dataset_path)
-    model = LoadAutoencoder()
-    show_reconstruction(model, dataloader)
+def check_cuda():
+    print(torch.cuda.is_available())
+    print(torch.version.cuda)
+    print(torch.backends.cudnn.enabled)
+
+    #temp
+    start = time.time()  # now do stuff
+
+    end = time.time()  # finished doing stuff
+    print(f"Total runtime of the program is {end - start} seconds")
 
 
 if __name__ == "__main__":
-    #print(torch.cuda.is_available())
-    #print(torch.version.cuda)
-    #print(torch.backends.cudnn.enabled)
+    #check_cuda()   # w terminalu sprawdzanie czy GPU działa ok: nvidia-smi -l 1
 
-    main()
-    #load_and_test_autoencoder()
+    #main(10)
+    #load_and_test_model_from_directory(['_presentable_models'], 'autoencoder_nogan_MSE_50ep.pth')
+
+    use_gan_autoencoder(10)
+    #load_and_test_model_from_directory('autoencoder_gan_best.pth', 10) #it is in use_gan_autoencoder already
 

@@ -1,8 +1,10 @@
-import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
+
+from utilise_dataset import get_default_dataloader, default_dataset_path, test_dataloader
+import my_filesystem
 
 device='cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -84,10 +86,10 @@ class Autoencoder(nn.Module):
 
 
 # Training function
-def train_autoencoder(model, dataloader, epochs=10, device=device):
-    model = model.to(device)
-    optimizer = optim.Adam(model.parameters(), lr=0.0002)
-    criterion = nn.MSELoss()  # Measures how different reconstruction is from original
+def train_autoencoder(autoencoder, dataloader, epochs=10, device=device):
+    autoencoder = autoencoder.to(device)
+    optimizer = optim.Adam(autoencoder.parameters(), lr=0.0002)
+    criterion = nn.L1Loss()  # Measures how different reconstruction is from original
 
     for epoch in range(epochs):
         total_loss = 0
@@ -95,7 +97,7 @@ def train_autoencoder(model, dataloader, epochs=10, device=device):
             images = images.to(device)
 
             # Forward pass
-            reconstructions, _ = model(images)
+            reconstructions, _ = autoencoder(images)
             loss = criterion(reconstructions, images)
 
             # Backward pass
@@ -108,15 +110,28 @@ def train_autoencoder(model, dataloader, epochs=10, device=device):
         avg_loss = total_loss / len(dataloader)
         print(f"Epoch {epoch + 1}/{epochs}, Loss: {avg_loss:.4f}")
 
-    return model
+    return autoencoder
 
 
 
-def LoadAutoencoder():
+def LoadAutoencoder(autoencoder_filepath):
     gen = Autoencoder().to(device)
-    gen.load_state_dict(torch.load(os.path.join("autoencoder.pth"), map_location=device))
+    gen.load_state_dict(torch.load(autoencoder_filepath, map_location=device))
     gen.eval()
     return gen
+
+
+def load_and_test_model_from_path(model_path, howmany=1):
+    dataloader = get_default_dataloader(default_dataset_path)
+    model = LoadAutoencoder(model_path)
+    for _ in range(howmany):
+        show_reconstruction(model, dataloader)
+
+def load_and_test_model_from_directory(directory:list[str], filename:str, howmany=3):
+    model_path = my_filesystem.get_model_path_from_directory(directory, filename)
+    load_and_test_model_from_path(model_path, howmany=howmany)
+
+
 
 # Visualization function
 def show_reconstruction(model, dataloader, device=device):

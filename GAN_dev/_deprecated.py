@@ -337,3 +337,69 @@ def test_data_pipeline():
 if __name__ == "__main__":
     # Run the test
     test_data_pipeline()
+
+def timing():
+    import time
+    start = time.time()  # now do stuff
+    end = time.time()  # finished doing stuff
+    print(f"Total runtime of the program is {end - start} seconds")
+
+def check_cuda(test : bool=False):
+    print(torch.cuda.is_available())
+    print(torch.version.cuda)
+    print(torch.backends.cudnn.enabled)
+    if(torch.cuda.is_available() and test):
+        cuda = torch.device('cuda')  # Default CUDA device
+        cuda0 = torch.device('cuda:0')
+        cuda2 = torch.device('cuda:2')  # GPU 2 (these are 0-indexed)
+
+        x = torch.tensor([1., 2.], device=cuda0)
+        # x.device is device(type='cuda', index=0)
+        y = torch.tensor([1., 2.]).cuda()
+        # y.device is device(type='cuda', index=0)
+
+        with torch.cuda.device(1):
+            # allocates a tensor on GPU 1
+            a = torch.tensor([1., 2.], device=cuda)
+
+            # transfers a tensor from CPU to GPU 1
+            b = torch.tensor([1., 2.]).cuda()
+            # a.device and b.device are device(type='cuda', index=1)
+
+            # You can also use ``Tensor.to`` to transfer a tensor:
+            b2 = torch.tensor([1., 2.]).to(device=cuda)
+            # b.device and b2.device are device(type='cuda', index=1)
+
+            c = a + b
+            # c.device is device(type='cuda', index=1)
+
+            z = x + y
+            # z.device is device(type='cuda', index=0)
+
+            # even within a context, you can specify the device
+            # (or give a GPU index to the .cuda call)
+            d = torch.randn(2, device=cuda2)
+            e = torch.randn(2).to(cuda2)
+            f = torch.randn(2).cuda(cuda2)
+            # d.device, e.device, and f.device are all device(type='cuda', index=2)
+
+def test_cuda(is_cpu : bool=False):
+    import time
+    start = time.time()  # now do stuff
+
+    my_device = None
+    if(is_cpu): my_device = 'cpu'
+    else: my_device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    # Create a large tensor on GPU
+    x = torch.randn(10000, 10000, device=my_device)
+    y = torch.randn(10000, 10000, device=my_device)
+
+    # Do a computation - this should spike GPU usage
+    z = torch.matmul(x, y)
+
+    print(f"Computation done on: {z.device}")
+    print("Check nvidia-smi now - you should see memory usage and brief GPU spike")
+
+    end = time.time()  # finished doing stuff
+    print(f"Total runtime of the program is {end - start} seconds")

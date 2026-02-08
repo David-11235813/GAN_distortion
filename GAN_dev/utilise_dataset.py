@@ -5,10 +5,10 @@ import torchvision
 from torchvision import transforms, datasets
 import matplotlib.pyplot as plt
 
+import my_filesystem
 
-my_dataset_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), os.pardir, 'dataset', 'faces_dataset_small')
-)
+default_dataset_path = my_filesystem.join_path(my_filesystem.dir_DATASET, 'faces_dataset_small')
+
 
 
 # Load LOCAL dataset - it works, but needs one more folder in file structure as label(s)
@@ -43,7 +43,8 @@ class FlatImageFolder(Dataset):
         return image, 0
 
 
-def get_default_dataloader(path):
+# todo
+def image_preprocessing_transform():
     transform = transforms.Compose([
         transforms.Resize(128),         # resize the image (keeps values)
         transforms.CenterCrop(128),     # crop center region
@@ -51,8 +52,25 @@ def get_default_dataloader(path):
         transforms.Normalize([0.5]*3,   # same as [0.5, 0.5, 0.5] ; normalizes (0,1) to (-1,1) for all channels
                              [0.5]*3)   # output_c = (input_c - mean[c]) / std[c]
     ])
+    return transform
+
+
+def get_default_dataloader(path = default_dataset_path):
+    transform = image_preprocessing_transform() #todo
+
     dataset = FlatImageFolder(path, transform)
-    return DataLoader(dataset, batch_size=32, shuffle=True, num_workers=2)
+
+    dataloader = DataLoader(
+        dataset,
+        batch_size=32,
+        shuffle=True,
+        num_workers=8,
+        pin_memory=True,            # Faster GPU transfer
+        persistent_workers=True,    # Keep workers alive between epochs (doubles speed); IMPORTANT True
+        #prefetch_factor = 4         # Prefetch 4 batches per worker
+    )
+
+    return dataloader
 
 
 def test_dataloader(dataloader: DataLoader, max_range : int=5):
@@ -64,3 +82,4 @@ def test_dataloader(dataloader: DataLoader, max_range : int=5):
         plt.imshow(grid.permute(1,2,0))
         plt.axis("off")
         plt.show()
+

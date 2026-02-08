@@ -2,9 +2,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-import os
 
-import time
+import my_filesystem
 
 
 # ---- Hyperparameters ----
@@ -21,12 +20,10 @@ transform = transforms.Compose([
     transforms.Normalize((0.5,), (0.5,))
 ])
 
-dataset_path = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), os.pardir, 'dataset')
-)
+dataset_dir = my_filesystem.dir_DATASET
 
 dataset = datasets.MNIST(
-    root=dataset_path,
+    root=dataset_dir,
     train=True,
     download=True,
     transform=transform
@@ -103,16 +100,16 @@ for epoch in range(epochs):
 # ---- Save generator ----
 
 
+#model_save_dir = my_filesystem.new_model_filepath('prototype')
 
-models_dir = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), os.pardir, 'middleman_folder', 'models')
-)
-os.makedirs(models_dir, exist_ok=True)
+#torch.save(G.state_dict(), my_filesystem.join_path(model_save_dir, 'generator.pth'))
+#torch.save(D.state_dict(), my_filesystem.join_path(model_save_dir, 'discriminator.pth'))
+#torch.save(D.state_dict(), os.path.join(run_dir, 'discriminator.pth'))
 
-run_dir = os.path.join(models_dir, time.strftime("%Y%m%d-%H%M%S"))
-os.makedirs(run_dir, exist_ok=True)
+model_save_dir = ['prototype']
+g_path = my_filesystem.save_model(G, model_save_dir, 'generator.pth', True)
+d_path = my_filesystem.save_model(D, model_save_dir, 'discriminator.pth', False)
 
-torch.save(G.state_dict(), os.path.join(run_dir, 'generator.pth'))
-torch.save(D.state_dict(), os.path.join(run_dir, 'discriminator.pth'))
+#load_and_test_model_from_path(g_path)
 
-print(f"Generator saved to {run_dir}")
+print(f"Generator saved to {g_path}")
