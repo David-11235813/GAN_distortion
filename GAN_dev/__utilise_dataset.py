@@ -5,9 +5,9 @@ import torchvision
 from torchvision import transforms, datasets
 import matplotlib.pyplot as plt
 
-import my_filesystem
+import __my_filesystem as files
 
-default_dataset_path = my_filesystem.join_path(my_filesystem.dir_DATASET, 'faces_dataset_small')
+default_dataset_path = files.dir_DATASET_FACES
 
 
 
@@ -55,7 +55,7 @@ def image_preprocessing_transform():
     return transform
 
 
-def get_default_dataloader(path = default_dataset_path):
+def get_default_dataloader(path=default_dataset_path):
     transform = image_preprocessing_transform() #todo
 
     dataset = FlatImageFolder(path, transform)

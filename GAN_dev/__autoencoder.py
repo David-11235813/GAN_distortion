@@ -1,25 +1,24 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import matplotlib.pyplot as plt
 
-from utilise_dataset import get_default_dataloader, default_dataset_path, test_dataloader
-import my_filesystem
+from __utilise_dataset import get_default_dataloader, default_dataset_path, test_dataloader
+from img_display_utils import display_autoencoder_reconstructions, reconstruct_image_and_display_features
 
 device='cuda' if torch.cuda.is_available() else 'cpu'
 
 # Encoder: Compresses image to feature vector
 class Encoder(nn.Module):
-    def __init__(self, latent_dim=512):
+    def __init__(self, latent_dim):
         super().__init__()
         # latent_dim is how many numbers we compress the image into
 
         self.encoder = nn.Sequential(
             # Input: 3 x 128 x 128
-            nn.Conv2d(3, 64, kernel_size=4, stride=2, padding=1),  # -> 64 x 64 x 64
+            nn.Conv2d(3,   64,  kernel_size=4, stride=2, padding=1),  # ->  64 x 64 x 64
             nn.ReLU(),
 
-            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),  # -> 128 x 32 x 32
+            nn.Conv2d(64,  128, kernel_size=4, stride=2, padding=1),  # -> 128 x 32 x 32
             nn.BatchNorm2d(128),
             nn.ReLU(),
 
@@ -27,7 +26,7 @@ class Encoder(nn.Module):
             nn.BatchNorm2d(256),
             nn.ReLU(),
 
-            nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1),  # -> 512 x 8 x 8
+            nn.Conv2d(256, 512, kernel_size=4, stride=2, padding=1),  # -> 512 x  8 x  8
             nn.BatchNorm2d(512),
             nn.ReLU(),
 
@@ -42,7 +41,7 @@ class Encoder(nn.Module):
 
 # Decoder: Reconstructs image from feature vector
 class Decoder(nn.Module):
-    def __init__(self, latent_dim=512):
+    def __init__(self, latent_dim):
         super().__init__()
 
         # Expand from vector back to spatial dimensions
@@ -58,11 +57,11 @@ class Decoder(nn.Module):
             nn.BatchNorm2d(128),
             nn.ReLU(),
 
-            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),  # -> 64 x 64 x 64
+            nn.ConvTranspose2d(128, 64,  kernel_size=4, stride=2, padding=1),  # -> 64 x 64 x 64
             nn.BatchNorm2d(64),
             nn.ReLU(),
 
-            nn.ConvTranspose2d(64, 3, kernel_size=4, stride=2, padding=1),  # -> 3 x 128 x 128
+            nn.ConvTranspose2d(64,  3,   kernel_size=4, stride=2, padding=1),  # -> 3 x 128 x 128
             nn.Tanh()  # Output in range [-1, 1] to match our normalized images
         )
 
@@ -74,8 +73,9 @@ class Decoder(nn.Module):
 
 # Complete Autoencoder
 class Autoencoder(nn.Module):
-    def __init__(self, latent_dim=512):
+    def __init__(self, latent_dim):
         super().__init__()
+        self.latent_dim = latent_dim
         self.encoder = Encoder(latent_dim)
         self.decoder = Decoder(latent_dim)
 
@@ -86,8 +86,8 @@ class Autoencoder(nn.Module):
 
 
 # Training function
-def train_autoencoder(autoencoder, dataloader, epochs=10, device=device):
-    autoencoder = autoencoder.to(device)
+def train_autoencoder(dataloader, compression_size=32, epochs=30):
+    autoencoder = Autoencoder(latent_dim=compression_size).to(device)
     optimizer = optim.Adam(autoencoder.parameters(), lr=0.0002)
     criterion = nn.L1Loss()  # Measures how different reconstruction is from original
 
@@ -97,7 +97,7 @@ def train_autoencoder(autoencoder, dataloader, epochs=10, device=device):
             images = images.to(device)
 
             # Forward pass
-            reconstructions, _ = autoencoder(images)
+            reconstructions, _ = autoencoder(images) # calls: autoencoder.forward(images) - but safer.
             loss = criterion(reconstructions, images)
 
             # Backward pass
@@ -114,53 +114,39 @@ def train_autoencoder(autoencoder, dataloader, epochs=10, device=device):
 
 
 
-def LoadAutoencoder(autoencoder_filepath):
+def load_autoencoder(autoencoder_filepath):
     gen = Autoencoder().to(device)
     gen.load_state_dict(torch.load(autoencoder_filepath, map_location=device))
     gen.eval()
     return gen
 
 
-def load_and_test_model_from_path(model_path, howmany=1):
+
+
+def load_and_test_model(model_path:str, howmany=1):
     dataloader = get_default_dataloader(default_dataset_path)
-    model = LoadAutoencoder(model_path)
+    model = load_autoencoder(model_path)
     for _ in range(howmany):
-        show_reconstruction(model, dataloader)
-
-def load_and_test_model_from_directory(directory:list[str], filename:str, howmany=3):
-    model_path = my_filesystem.get_model_path_from_directory(directory, filename)
-    load_and_test_model_from_path(model_path, howmany=howmany)
-
+        show_autoencoder_reconstruction(model, dataloader)
 
 
 # Visualization function
-def show_reconstruction(model, dataloader, device=device):
+def show_autoencoder_reconstruction(model, dataloader, device=device):
     model.eval()
     with torch.no_grad():
         images, _ = next(iter(dataloader))
         images = images.to(device)
         reconstructions, features = model(images)
 
-        # Show original vs reconstruction
-        fig, axes = plt.subplots(2, 8, figsize=(15, 4))
-        for i in range(8):
-            # Original
-            orig = images[i].cpu().permute(1, 2, 0).numpy()
-            orig = (orig + 1) / 2  # Denormalize
-            axes[0, i].imshow(orig)
-            axes[0, i].axis('off')
-            if i == 0:
-                axes[0, i].set_title('Original', fontsize=10)
-
-            # Reconstruction
-            recon = reconstructions[i].cpu().permute(1, 2, 0).numpy()
-            recon = (recon + 1) / 2  # Denormalize
-            axes[1, i].imshow(recon)
-            axes[1, i].axis('off')
-            if i == 0:
-                axes[1, i].set_title('Reconstructed', fontsize=10)
-
-        plt.tight_layout()
-        plt.show()
+        display_autoencoder_reconstructions(images, reconstructions, 10)
 
         print(f"Feature vector size: {features.shape}")
+
+
+
+def display_reconstructed_features(model, dataloader, device=device):
+    model.eval()
+    with torch.no_grad():
+        image1, _ = next(iter(dataloader))[0].unsqueeze(0)  # First image; shape: [1, 3, 128, 128] (model expects [batch_size, C, H, W])
+        image1 = image1.to(device)
+        reconstruct_image_and_display_features(model, image1)

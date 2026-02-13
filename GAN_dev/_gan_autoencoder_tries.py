@@ -1,14 +1,14 @@
 #temporary checks and proofs of concept here.
 
-import my_filesystem
+import __my_filesystem as files
+import time
 import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from autoencoder import Autoencoder
-from utilise_dataset import get_default_dataloader
+from __autoencoder import Autoencoder, load_and_test_model
+from __utilise_dataset import get_default_dataloader
 
-from main import load_and_test_model_from_path
 
 device='cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -257,7 +257,21 @@ def use_gan_autoencoder(epochs=50):
     #torch.save(discriminator.state_dict(), my_filesystem.join_path(model_save_dir, 'discriminator_gan6.pth'))
 
     model_save_dir = ['QWERT']
-    g_path = my_filesystem.save_model(autoencoder, model_save_dir, 'autoencoder_gan.pth', True)
-    d_path = my_filesystem.save_model(discriminator, model_save_dir, 'discriminator_gan.pth', False)
+    g_path = files.save_model(autoencoder, model_save_dir, 'autoencoder_gan.pth', True)
+    d_path = files.save_model(discriminator, model_save_dir, 'discriminator_gan.pth', False)
 
-    load_and_test_model_from_path(g_path)
+    load_and_test_model(g_path)
+
+
+
+
+def check_cuda():
+    print(torch.cuda.is_available())
+    print(torch.version.cuda)
+    print(torch.backends.cudnn.enabled)
+
+    #temp
+    start = time.time()  # now do stuff
+
+    end = time.time()  # finished doing stuff
+    print(f"Total runtime of the program is {end - start} seconds")
