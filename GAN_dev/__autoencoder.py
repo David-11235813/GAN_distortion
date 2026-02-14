@@ -73,7 +73,7 @@ class Decoder(nn.Module):
 
 # Complete Autoencoder
 class Autoencoder(nn.Module):
-    def __init__(self, latent_dim):
+    def __init__(self, latent_dim=512):
         super().__init__()
         self.latent_dim = latent_dim
         self.encoder = Encoder(latent_dim)

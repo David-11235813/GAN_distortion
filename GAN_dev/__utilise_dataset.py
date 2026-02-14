@@ -55,11 +55,21 @@ def image_preprocessing_transform():
     return transform
 
 
-def get_default_dataloader(path=default_dataset_path):
-    transform = image_preprocessing_transform() #todo
+def image_preprocessing_transform_grayscale():
+    transform = transforms.Compose([
+        transforms.Resize(128),         # resize the image (keeps values)
+        transforms.CenterCrop(128),     # crop center region
+        transforms.Grayscale(num_output_channels=1),   # <- convert to grayscale (PIL Image: 1 channel)
+        transforms.ToTensor(),          # H×W×C → C×H×W (where C=1)
+        transforms.Normalize((0.5,), (0.5,))
+    ])
+    return transform
 
+
+
+def get_default_dataloader(path=default_dataset_path, is_grayscale=False):
+    transform = image_preprocessing_transform() if not is_grayscale else image_preprocessing_transform_grayscale() #todo
     dataset = FlatImageFolder(path, transform)
-
     dataloader = DataLoader(
         dataset,
         batch_size=32,
@@ -69,7 +79,21 @@ def get_default_dataloader(path=default_dataset_path):
         persistent_workers=True,    # Keep workers alive between epochs (doubles speed); IMPORTANT True
         #prefetch_factor = 4         # Prefetch 4 batches per worker
     )
+    dataloader.is_grayscale = is_grayscale
+    return dataloader
 
+
+def get_singular_dataloader(path=default_dataset_path, is_grayscale=False):
+    transform = image_preprocessing_transform() if not is_grayscale else image_preprocessing_transform_grayscale() #todo
+    dataset = FlatImageFolder(path, transform)
+    dataloader = DataLoader(
+        dataset,
+        batch_size=1,
+        shuffle=True,
+        num_workers=1,
+        persistent_workers=True,    # Keep workers alive between epochs (doubles speed); IMPORTANT True
+    )
+    dataloader.is_grayscale = is_grayscale
     return dataloader
 
 

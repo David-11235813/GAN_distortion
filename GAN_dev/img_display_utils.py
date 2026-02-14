@@ -10,7 +10,9 @@ def display_autoencoder_reconstructions(images_batch, reconstructions, howmany):
         # Original
         orig = images_batch[i].cpu().permute(1, 2, 0).numpy()
         orig = (orig + 1) / 2  # Denormalize
-        axes[0, i].imshow(orig)
+        #axes[0, i].imshow(orig)    # works only for RGB, not grayscale
+        axes[0, i].imshow(orig.squeeze(-1) if orig.shape[2] == 1 else orig,
+                          cmap='gray' if orig.shape[2] == 1 else None, vmin=0, vmax=1)
         axes[0, i].axis('off')
         if i == 0:
             axes[0, i].set_title('Original', fontsize=10)
@@ -18,7 +20,9 @@ def display_autoencoder_reconstructions(images_batch, reconstructions, howmany):
         # Reconstruction
         recon = reconstructions[i].cpu().permute(1, 2, 0).numpy()
         recon = (recon + 1) / 2  # Denormalize
-        axes[1, i].imshow(recon)
+        #axes[1, i].imshow(recon)    # works only for RGB, not grayscale
+        axes[1, i].imshow(recon.squeeze(-1) if recon.shape[2] == 1 else recon,
+                          cmap='gray' if recon.shape[2] == 1 else None, vmin=0, vmax=1)
         axes[1, i].axis('off')
         if i == 0:
             axes[1, i].set_title('Reconstructed', fontsize=10)
