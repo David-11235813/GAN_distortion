@@ -22,6 +22,21 @@ dir_MID_MODELS = os.path.abspath(
 )
 
 
+
+def join_path(*parts: str) -> str:
+    return os.path.join(*parts)
+
+
+def prepare_folder(dir_path: str) -> str:
+    os.makedirs(dir_path, exist_ok=True)
+    return dir_path
+
+
+def get_default_img_folder(file_path:str) -> str:
+    folder_name = os.path.splitext(file_path)[0]
+    return prepare_folder(folder_name)
+
+
 def get_model_path_from_directory(directory: list[str], filename:str) -> str:
     model_path = os.path.join(dir_MID_MODELS, *directory, filename)
     return model_path

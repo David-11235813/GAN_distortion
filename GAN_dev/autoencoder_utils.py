@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 
 from img_display_utils import display_autoencoder_reconstructions
-from my_filesystem import prepare_model_save_path
+from my_filesystem import prepare_model_save_path, join_path
 
 
 device='cuda' if torch.cuda.is_available() else 'cpu'
@@ -141,15 +141,18 @@ def load_autoencoder(autoencoder_filepath:str) -> Autoencoder:
     return autoencoder
 
 
-def show_autoencoder_reconstruction(autoencoder, dataloader):
+def show_autoencoder_reconstruction(autoencoder, dataloader, howmany_plots=1, save:bool=False, img_save_folder:str=''):
     autoencoder.eval()
     with torch.no_grad():
-        images, _ = next(iter(dataloader))
-        images = images.to(device)
-        reconstructions, features = autoencoder(images)
+        for idx in range(howmany_plots):
+            images, _ = next(iter(dataloader))
+            images = images.to(device)
+            reconstructions, features = autoencoder(images)
 
-        display_autoencoder_reconstructions(images, reconstructions, 6)
-        print(f"Feature vector size: {features.shape}")
+            fig = display_autoencoder_reconstructions(images, reconstructions, 6)
+            if save:
+                fig.savefig(join_path(img_save_folder, f'reconstructions_{idx}.png'))
+            print(f"Feature vector size: {features.shape}")
 
 
 def show_encoder_output(autoencoder, dataloader):

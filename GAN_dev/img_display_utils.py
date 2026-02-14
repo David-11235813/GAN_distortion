@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 
 
 # Show original vs reconstruction
-def display_autoencoder_reconstructions(images_batch, reconstructions, howmany):
-    howmany = min(howmany, images_batch.shape[0])
+def display_autoencoder_reconstructions(images_batch, reconstructions, howmany_imgs) -> plt.Figure:
+    howmany = min(howmany_imgs, images_batch.shape[0])
 
     fig, axes = plt.subplots(2, howmany, figsize=(15, 4))
     for i in range(howmany):
@@ -29,6 +29,7 @@ def display_autoencoder_reconstructions(images_batch, reconstructions, howmany):
 
     plt.tight_layout()
     plt.show()
+    return fig
 
 
 

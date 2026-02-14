@@ -33,6 +33,7 @@ dataset/
 *.pth
 *.pt
 *.ckpt
+*.png
 
 # Logs / temp
 *.log
