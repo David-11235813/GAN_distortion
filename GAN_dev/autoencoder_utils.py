@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from img_display_utils import display_autoencoder_reconstructions
-from my_filesystem import prepare_model_save_path, join_path
+from utilise_dataset import get_default_dataloader, get_singular_dataloader
+from img_display_utils import display_autoencoder_reconstructions, display_autoencoder_reconstructions_OneImg
+import my_filesystem as files
 
 
 device='cuda' if torch.cuda.is_available() else 'cpu'
@@ -90,6 +91,16 @@ class Autoencoder(nn.Module):
         return reconstruction, features
 
 
+    def encode(self, x):
+        features = self.encoder(x)
+        return features
+
+    def decode(self, features):
+        reconstruction = self.decoder(features)
+        return reconstruction
+
+
+
 # Training function
 def train_autoencoder(dataloader, compression_size:int, epochs=30) -> Autoencoder:
     autoencoder = Autoencoder(latent_dim=compression_size, is_grayscale=dataloader.is_grayscale).to(device)
@@ -119,7 +130,7 @@ def train_autoencoder(dataloader, compression_size:int, epochs=30) -> Autoencode
 
 
 def save_autoencoder(autoencoder:Autoencoder, directory:list[str], filename:str, new_timedate:bool) -> str:
-    save_path = prepare_model_save_path(directory, filename, new_timedate)
+    save_path = files.prepare_model_save_path(directory, filename, new_timedate)
     torch.save({
         'state_dict': autoencoder.state_dict(),
         'latent_dim': autoencoder.latent_dim,
@@ -141,7 +152,7 @@ def load_autoencoder(autoencoder_filepath:str) -> Autoencoder:
     return autoencoder
 
 
-def show_autoencoder_reconstruction(autoencoder, dataloader, howmany_plots=1, save:bool=False, img_save_folder:str=''):
+def show_autoencoder_reconstruction(autoencoder:Autoencoder, dataloader, howmany_plots=1, save:bool=False, img_save_folder:str=''):
     autoencoder.eval()
     with torch.no_grad():
         for idx in range(howmany_plots):
@@ -149,18 +160,43 @@ def show_autoencoder_reconstruction(autoencoder, dataloader, howmany_plots=1, sa
             images = images.to(device)
             reconstructions, features = autoencoder(images)
 
-            fig = display_autoencoder_reconstructions(images, reconstructions, 6)
-            if save:
-                fig.savefig(join_path(img_save_folder, f'reconstructions_{idx}.png'))
+            fig = display_autoencoder_reconstructions(images, reconstructions, 8)
+
+            if save: fig.savefig(files.join_path_unsupervised(img_save_folder, f'reconstructions_{idx}.png'))
             print(f"Feature vector size: {features.shape}")
 
 
-def show_encoder_output(autoencoder, dataloader):
-    encoder = autoencoder.encoder
-    encoder.eval()
+def show_autoencoder_partial_reconstructions(autoencoder:Autoencoder, howmany_plots=1, save:bool=False, img_save_folder:str= ''):
+    singular_dataloader = get_singular_dataloader(files.dir_DATASET_FACES, autoencoder.is_grayscale)
+    autoencoder.eval()
+    with torch.no_grad():
+        for idx in range(howmany_plots):
+            original_img, _ = next(iter(singular_dataloader))
+            original_img = original_img.to(device)
+            full_reconstruction, features = autoencoder(original_img)
+            partial_reconstructions_tensor = return_decoder_output(autoencoder, features)
+            #create latent_dim images of partial reconstruction
+            print(partial_reconstructions_tensor.shape)
+
+            fig = display_autoencoder_reconstructions_OneImg(original_img[0], full_reconstruction[0], partial_reconstructions_tensor)
+            if save: fig.savefig(files.join_path_unsupervised(img_save_folder, f'_OneImg_features{'_gray' if autoencoder.is_grayscale else ''}_{autoencoder.latent_dim}_{idx}.png'))
+            print(f"Feature vector size: {features.shape}")
+
+
+#not useful
+def return_encoder_output(autoencoder:Autoencoder, dataloader) -> torch.Tensor:
+    autoencoder.eval()
     with torch.no_grad():
         images, _ = next(iter(dataloader))
         images = images.to(device)
-        features = encoder(images)
+        features = autoencoder.encode(images)
         print(f"Feature vector size: {features.shape}")
         return features
+
+
+def return_decoder_output(autoencoder:Autoencoder, features):
+    autoencoder.eval()
+    with torch.no_grad():
+        single_features_tensor = torch.diag_embed(features) # +1 dimension, every feature is now 0-grid with its values on diagonal
+        partial_reconstructions = autoencoder.decode(single_features_tensor)
+        return partial_reconstructions

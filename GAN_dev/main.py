@@ -1,19 +1,22 @@
 # pip install -r req_dev.txt
 # python -m pip install --upgrade pip setuptools wheel
 # pip install --index-url https://download.pytorch.org/whl/cu126 torch torchvision torchaudio
+## if it doesn't work:
+# python -m pip uninstall -y torch torchvision torchaudio
+# python -m pip cache purge
+# python -m pip install --no-cache-dir --upgrade --index-url https://download.pytorch.org/whl/cu126 torch torchvision torchaudio
 
-from __utilise_dataset import get_default_dataloader, get_singular_dataloader
-
-from autoencoder_utils import train_autoencoder, show_autoencoder_reconstruction, save_autoencoder, load_autoencoder, show_encoder_output
+from utilise_dataset import get_default_dataloader, get_singular_dataloader
+from autoencoder_utils import train_autoencoder, show_autoencoder_reconstruction, save_autoencoder, load_autoencoder, show_autoencoder_partial_reconstructions
 import my_filesystem as files
 
 
-_compression_size=32
+_compression_size=12
 _is_grayscale = True
-_epochs=5
+_epochs=50
 _directory=['AutoencodersTesting']
-_filename='autoencoder_size8_100ep.pth'
-
+_filename=f'autoencoder{'_gray' if _is_grayscale else ''}_size{_compression_size}_{_epochs}ep.pth'
+#_filename='autoencoder_size32_50ep.pth'
 
 def produce_autoencoder(compression_size=_compression_size, is_grayscale=_is_grayscale, epochs=_epochs, directory=_directory, filename=_filename) -> str:
     dataloader = get_default_dataloader(files.dir_DATASET_FACES, is_grayscale)
@@ -24,38 +27,45 @@ def produce_autoencoder(compression_size=_compression_size, is_grayscale=_is_gra
     return save_path
 
 
-def use_autoencoder(load_path:str, howmany=1):
+def use_autoencoder(load_path:str, howmany_plots=1):
     autoencoder = load_autoencoder(load_path)
     dataloader = get_default_dataloader(files.dir_DATASET_FACES, autoencoder.is_grayscale)
 
-    show_autoencoder_reconstruction(autoencoder, dataloader, howmany,
+    show_autoencoder_reconstruction(autoencoder, dataloader, howmany_plots,
         save=True,
         img_save_folder=files.get_default_img_folder(load_path)
     )
 
 #-----------------------------------------------------------------------------------------------------------------------
-
-def main2():
-    autoencoder_path = files.get_model_path_from_directory(_directory, _filename)
-
-    # now: display only the _compression_size numbers
-    autoencoder = load_autoencoder(autoencoder_path)
-    dataloader = get_singular_dataloader(files.dir_DATASET_FACES, autoencoder.is_grayscale)
-
-    features = show_encoder_output(autoencoder, dataloader)
-    print(features[0].tolist())
-
-
 def main1():
-    autoencoder_path = files.get_model_path_from_directory(directory=_directory, filename='autoencoder1.pth')
+    """
+    generate and test the autoencoder, show results (and optionally save)
+    """
+    #autoencoder_path = files.get_model_path_from_directory(directory=_directory, filename=_filename)
     #autoencoder_path = produce_autoencoder(compression_size=16, is_grayscale=True, epochs=10, directory=_directory, filename='autoencoder_gray_size16_10ep.pth') #uncomment for training new autoencoder; leave commented for loading previous one
+
+    autoencoder_path = produce_autoencoder() #preset parameters
     use_autoencoder(autoencoder_path, 5)
 
 
+#singular features
+def main2():
+    autoencoder_path = files.get_model_path_from_directory(_directory, _filename)
+    autoencoder = load_autoencoder(autoencoder_path)
+
+    show_autoencoder_partial_reconstructions(autoencoder, howmany_plots=5, save=True,
+        img_save_folder=files.prepare_folder(files.join_path_unsupervised(files.dir_MID, 'IMG_TEST'))
+    )
+
+
+
 if __name__ == "__main__":
-    main1()
+    #main1()
+    main2()
+
     #todo:
-    # save plots to subfolders
+    # show reproduced features
+
 
     pass
 

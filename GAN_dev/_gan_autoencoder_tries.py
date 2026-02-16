@@ -6,8 +6,8 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import matplotlib.pyplot as plt
-from __autoencoder import Autoencoder, load_and_test_model
-from __utilise_dataset import get_default_dataloader
+from autoencoder_utils import Autoencoder
+from utilise_dataset import get_default_dataloader
 
 
 device='cuda' if torch.cuda.is_available() else 'cpu'
@@ -243,7 +243,7 @@ def train_gan_autoencoder_v2(autoencoder, discriminator, dataloader, epochs=10, 
     return autoencoder, discriminator
 
 
-
+'''
 def use_gan_autoencoder(epochs=50):
     autoencoder = Autoencoder(latent_dim=512)
     discriminator = Discriminator()
@@ -261,7 +261,7 @@ def use_gan_autoencoder(epochs=50):
     d_path = files.save_model(discriminator, model_save_dir, 'discriminator_gan.pth', False)
 
     load_and_test_model(g_path)
-
+'''
 
 
 

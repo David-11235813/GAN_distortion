@@ -1,11 +1,9 @@
-
-
 import os
 from typing import List
 from PIL import Image
 import torch
 
-from _testing_code import *
+from autoencoder_utils import Autoencoder, device, files
 
 
 def log(text):
@@ -36,7 +34,8 @@ def access_dataset():
 
 if __name__ == '__main__':
     #access_dataset()
-    testing()
+    #testing()
+    pass
 
 
 
@@ -403,3 +402,66 @@ def test_cuda(is_cpu : bool=False):
 
     end = time.time()  # finished doing stuff
     print(f"Total runtime of the program is {end - start} seconds")
+
+
+
+
+
+#deprecated
+def show_autoencoder_reconstruction_TESTING(autoencoder:Autoencoder, dataloader, howmany_plots=1, save:bool=False, img_save_folder:str= ''):
+    autoencoder.eval()
+    with torch.no_grad():
+        for idx in range(howmany_plots):
+            images, _ = next(iter(dataloader))
+            images = images.to(device)
+            reconstructions, features = autoencoder(images)
+
+            fig = display_autoencoder_reconstructions_TESTING(images, reconstructions, 8)
+
+            if save: fig.savefig(files.join_path_unsupervised(img_save_folder, f'features_{idx}.png'))
+            print(f"Feature vector size: {features.shape}")
+
+
+
+#deprecated
+def display_autoencoder_reconstructions_TESTING(images_batch, reconstructions, howmany_imgs) -> plt.Figure:
+    howmany = min(howmany_imgs, images_batch.shape[0])
+    is_grayscale:bool = (images_batch[0].cpu().permute(1, 2, 0).numpy().shape[2] == 1)
+
+    fig, axes = plt.subplots(2, howmany, figsize=(15, 4))
+    #[ax.axis('off') for ax in axes.ravel()] #disables all axes
+    [ax.tick_params(left=False, bottom=False, labelleft=False, labelbottom=False) for ax in axes.ravel()] #preserves borders only
+
+    axes[0, 0].set_title('Original', fontsize=10)
+    axes[0, 1].set_title('Reconstructed', fontsize=10)
+    axes[1, 0].set_title('1st feature', fontsize=10)
+
+    for i in range(howmany):
+        # Original
+        orig = images_batch[i].cpu().permute(1, 2, 0).numpy()
+        orig = (orig + 1) / 2  # Denormalize
+        axes[0, i].imshow(orig)    # works only for RGB, not grayscale
+
+        if i>0: continue
+        # Reconstruction
+        recon = reconstructions[i].cpu().permute(1, 2, 0).numpy()
+        recon = (recon + 1) / 2  # Denormalize
+        axes[1, i].imshow(recon)    # works only for RGB, not grayscale
+
+    plt.tight_layout()
+    plt.show()
+    return fig
+
+
+
+#pyplot testing
+'''
+def main3():
+    load_path = files.get_model_path_from_directory(directory=_directory, filename=_filename)
+    autoencoder = load_autoencoder(load_path)
+    dataloader = get_default_dataloader(files.dir_DATASET_FACES, autoencoder.is_grayscale)
+
+    show_autoencoder_reconstruction_TESTING(autoencoder, dataloader, howmany_plots=2, save=True,
+        img_save_folder=files.prepare_folder(files.join_path_unsupervised(files.dir_MID, 'IMG_TEST'))
+    )
+'''

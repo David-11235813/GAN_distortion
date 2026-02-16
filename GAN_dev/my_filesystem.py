@@ -1,6 +1,5 @@
 import os
 import time
-import torch
 
 
 dir_DEV = os.path.abspath(os.path.dirname(__file__))
@@ -23,7 +22,7 @@ dir_MID_MODELS = os.path.abspath(
 
 
 
-def join_path(*parts: str) -> str:
+def join_path_unsupervised(*parts: str) -> str:
     return os.path.join(*parts)
 
 
@@ -33,8 +32,8 @@ def prepare_folder(dir_path: str) -> str:
 
 
 def get_default_img_folder(file_path:str) -> str:
-    folder_name = os.path.splitext(file_path)[0]
-    return prepare_folder(folder_name)
+    path_to_folder_name = os.path.splitext(file_path)[0]
+    return prepare_folder(path_to_folder_name)
 
 
 def get_model_path_from_directory(directory: list[str], filename:str) -> str:

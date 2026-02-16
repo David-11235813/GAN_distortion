@@ -5,14 +5,14 @@ import torchvision
 from torchvision import transforms, datasets
 import matplotlib.pyplot as plt
 
-import __my_filesystem as files
+import my_filesystem as files
 
 default_dataset_path = files.dir_DATASET_FACES
 
 
 
-# Load LOCAL dataset - it works, but needs one more folder in file structure as label(s)
-# dataset = torchvision.datasets.ImageFolder(root='dataset/PhotosColorPicker', transform=transform)
+# Load LOCAL dataset - code in next line works, but needs one more folder in file structure as label(s)
+#dataset = torchvision.datasets.ImageFolder(root='dataset/PhotosColorPicker', transform=transform)
 # this one doesn't need that label folder
 #dataset = FlatImageFolder(my_dataset_path, transform)
 class FlatImageFolder(Dataset):
@@ -43,7 +43,7 @@ class FlatImageFolder(Dataset):
         return image, 0
 
 
-# todo
+#double-check
 def image_preprocessing_transform():
     transform = transforms.Compose([
         transforms.Resize(128),         # resize the image (keeps values)
@@ -67,12 +67,12 @@ def image_preprocessing_transform_grayscale():
 
 
 
-def get_default_dataloader(path=default_dataset_path, is_grayscale=False):
-    transform = image_preprocessing_transform() if not is_grayscale else image_preprocessing_transform_grayscale() #todo
+def get_default_dataloader(path=default_dataset_path, is_grayscale=False, batch_size=32):
+    transform = image_preprocessing_transform() if not is_grayscale else image_preprocessing_transform_grayscale() #todo?
     dataset = FlatImageFolder(path, transform)
     dataloader = DataLoader(
         dataset,
-        batch_size=32,
+        batch_size=batch_size,
         shuffle=True,
         num_workers=8,
         pin_memory=True,            # Faster GPU transfer
@@ -84,7 +84,7 @@ def get_default_dataloader(path=default_dataset_path, is_grayscale=False):
 
 
 def get_singular_dataloader(path=default_dataset_path, is_grayscale=False):
-    transform = image_preprocessing_transform() if not is_grayscale else image_preprocessing_transform_grayscale() #todo
+    transform = image_preprocessing_transform() if not is_grayscale else image_preprocessing_transform_grayscale()
     dataset = FlatImageFolder(path, transform)
     dataloader = DataLoader(
         dataset,
