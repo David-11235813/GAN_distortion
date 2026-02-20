@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import numpy as np
 
 from utilise_dataset import get_default_dataloader, get_singular_dataloader
 from img_display_utils import display_autoencoder_reconstructions, display_autoencoder_reconstructions_OneImg
@@ -47,8 +48,7 @@ class Decoder(nn.Module):
     def __init__(self, latent_dim, channels_nr):
         super().__init__()
 
-        # Expand from vector back to spatial dimensions
-        self.fc = nn.Linear(latent_dim, 512 * 8 * 8)
+        self.fc = nn.Linear(latent_dim, 512 * 8 * 8)    # Expand from vector back to spatial dimensions
 
         self.decoder = nn.Sequential(
             # Input: 512 x 8 x 8
@@ -68,10 +68,10 @@ class Decoder(nn.Module):
             nn.Tanh()  # Output in range [-1, 1] to match our normalized images
         )
 
-    def forward(self, x):
-        x = self.fc(x)
-        x = x.view(-1, 512, 8, 8)  # Reshape to spatial dimensions
-        return self.decoder(x)
+    def forward(self, features): #features: shape = (batch_size, latent_dim)
+        features = self.fc(features).view(-1, 512, 8, 8) # Reshape to spatial dimensions
+        decoded_img = self.decoder(features)
+        return decoded_img
 
 
 # Complete Autoencoder
@@ -182,6 +182,43 @@ def show_autoencoder_partial_reconstructions(autoencoder:Autoencoder, howmany_pl
             if save: fig.savefig(files.join_path_unsupervised(img_save_folder, f'_OneImg_features{'_gray' if autoencoder.is_grayscale else ''}_{autoencoder.latent_dim}_{idx}.png'))
             print(f"Feature vector size: {features.shape}")
 
+def show_autoencoder_partial_reconstructions_scaled(autoencoder:Autoencoder, scales, howmany_plots=1, save:bool=False, img_save_folder:str= ''):
+    singular_dataloader = get_singular_dataloader(files.dir_DATASET_FACES, autoencoder.is_grayscale)
+    autoencoder.eval()
+    with torch.no_grad():
+        for idx in range(howmany_plots):
+            original_img, _ = next(iter(singular_dataloader))
+            original_img = original_img.to(device)
+
+            full_reconstruction, features = autoencoder(original_img)
+
+
+            partial_reconstructions_tensor = return_decoder_output(autoencoder, features)
+            #create latent_dim images of partial reconstruction
+            print(partial_reconstructions_tensor.shape)
+
+            fig = display_autoencoder_reconstructions_OneImg(original_img[0], full_reconstruction[0], partial_reconstructions_tensor)
+            if save: fig.savefig(files.join_path_unsupervised(img_save_folder, f'_{idx}_unscaled_OneImg_features{'_gray' if autoencoder.is_grayscale else ''}_{autoencoder.latent_dim}.png'))
+            print(f"Feature vector size: {features.shape}")
+
+            #---------------------------------------
+            #scaled
+
+            scales = torch.as_tensor(scales, device=device)
+            features = features * scales
+            full_reconstruction = return_decoder_output(autoencoder, features)
+            partial_reconstructions_tensor = return_decoder_output(autoencoder, features)
+
+            #scales = scales[:, None, None, None]
+            #scales = torch.as_tensor(scales, device=device)
+            #partial_reconstructions_tensor = partial_reconstructions_tensor[:, 1, 128, 128]*scales
+            #create latent_dim images of partial reconstruction
+            print(partial_reconstructions_tensor.shape)
+
+            fig = display_autoencoder_reconstructions_OneImg(original_img[0], full_reconstruction[0], partial_reconstructions_tensor)
+            if save: fig.savefig(files.join_path_unsupervised(img_save_folder, f'_{idx}_scaled_OneImg_features{'_gray' if autoencoder.is_grayscale else ''}_{autoencoder.latent_dim}.png'))
+            print(f"Feature vector size: {features.shape}")
+
 
 #not useful
 def return_encoder_output(autoencoder:Autoencoder, dataloader) -> torch.Tensor:
@@ -193,6 +230,14 @@ def return_encoder_output(autoencoder:Autoencoder, dataloader) -> torch.Tensor:
         print(f"Feature vector size: {features.shape}")
         return features
 
+#not useful
+def return_encoder_output_of_given_batch(autoencoder:Autoencoder, img_batch) -> torch.Tensor:
+    autoencoder.eval()
+    with torch.no_grad():
+        img_batch = img_batch.to(device)
+        features = autoencoder.encode(img_batch)
+        print(f"Feature vector size: {features.shape}")
+        return features
 
 def return_decoder_output(autoencoder:Autoencoder, features):
     autoencoder.eval()

@@ -1,0 +1,123 @@
+import torch
+import torch.nn as nn
+from autoencoder_utils import Autoencoder, return_encoder_output, return_decoder_output, return_encoder_output_of_given_batch
+
+device="cuda" if torch.cuda.is_available() else "cpu"
+
+class Discriminator(nn.Module):
+    def __init__(self, img_side_pixels=128, channels_nr=1):
+        super().__init__()
+        self.model = nn.Sequential(
+            nn.Conv2d(channels_nr, img_side_pixels, 4, 2, 1),
+            nn.LeakyReLU(0.2),
+
+            nn.Conv2d(img_side_pixels, img_side_pixels * 2, 4, 2, 1),
+            nn.BatchNorm2d(img_side_pixels * 2),
+            nn.LeakyReLU(0.2),
+
+            nn.Conv2d(img_side_pixels * 2, img_side_pixels * 4, 4, 2, 1),
+            nn.BatchNorm2d(img_side_pixels * 4),
+            nn.LeakyReLU(0.2),
+
+            nn.Conv2d(img_side_pixels * 4, img_side_pixels * 8, 4, 2, 1),
+            nn.BatchNorm2d(img_side_pixels * 8),
+            nn.LeakyReLU(0.2),
+
+            nn.Conv2d(img_side_pixels * 8, 1, 4, 1, 0),
+            nn.Sigmoid(),
+            nn.AdaptiveAvgPool2d(1),  # forces output to (batch, 1, 1, 1) regardless of input size
+            nn.Flatten(),
+        )
+
+    def forward(self, x):
+        return self.model(x)
+
+
+# ── Training Function ────────────────────────────────────────────────────────
+
+def train_gan_scales(
+    generator : Autoencoder,
+    #discriminator : Discriminator,
+    dataloader,
+    epochs=50,
+    #lr=0.0002,
+    device=device,
+):
+    generator.to(device)
+
+    discriminator = Discriminator(128, channels_nr = 3 if not generator.is_grayscale else 1)
+    discriminator.to(device)
+
+    generator_scales = torch.ones(generator.latent_dim, requires_grad=True, device=device)
+
+    #product_loss = (generator_scales.prod() - pow(1.03, generator.latent_dim)).pow(2)
+    desired_geometric_average = pow(1.03, generator.latent_dim)
+
+    # og value: 0.1
+    lambda_prod = 0.05 # how much encouragement does the model need to derive all scales from 1.0 by approx. 3%
+
+    # og value: 0.01; 0.05 is too much, try 0.02
+    lambda_div = 0.02 # how much encouragement does the model need to increase the variance of scales
+
+    # generator.weights is its only trainable parameter
+    opt_g = torch.optim.Adam([generator_scales], lr=0.0002, betas=(0.5, 0.999))
+    opt_d = torch.optim.Adam(discriminator.parameters(), lr=0.0002, betas=(0.5, 0.999))
+    criterion = nn.BCELoss()
+
+    for epoch in range(epochs):
+        for batch_idx, (real_imgs, _) in enumerate(dataloader):
+            real_imgs = real_imgs.to(device)
+            batch_size = real_imgs.size(0)
+
+
+            # add label smoothing, because discriminator wins completely
+            #real_labels = torch.full((batch_size, 1), 0.9, device=device)  # instead of 1.0
+            #fake_labels = torch.full((batch_size, 1), 0.1, device=device)  # instead of 0.0
+            real_labels = torch.ones(batch_size, 1, device=device)
+            fake_labels = torch.zeros(batch_size, 1, device=device)
+
+            # ── Train Discriminator ──────────────────────────────────────────
+
+            #encoded = return_encoder_output_of_given_batch(generator, real_imgs)
+            #decoded = return_decoder_output(generator, encoded * generator_scales)
+            #fake_imgs = decoded.detach()
+
+            #fake_imgs = generator(batch_size*real_imgs[])#.detach()  # detach: no G update here
+
+            with torch.no_grad():
+                encoded = generator.encode(real_imgs)
+
+            decoded_og = generator.decode(encoded).detach()
+            fake_imgs = generator.decode(encoded * generator_scales).detach()  # detached for D
+
+            d_loss = (
+                    criterion(discriminator(decoded_og), real_labels) + # prevents decoder to learn decoding artifacts and overpowering learning
+                    criterion(discriminator(fake_imgs), fake_labels)
+            )
+
+            # Only update D every other step - so that discriminator doesn't win completely again
+            #if batch_idx % 2 == 0:
+            opt_d.zero_grad()
+            d_loss.backward()
+            opt_d.step()
+
+            # ── Train Generator ──────────────────────────────────────────────
+            with torch.no_grad():
+                encoded = generator.encode(real_imgs)  # encoder doesn't need grads
+            fake_imgs_g = generator.decode(encoded * generator_scales)  # no detach — grads flow to generator_scales
+
+            #g_loss = criterion(discriminator(fake_imgs_g), real_labels)
+            product_loss = (generator_scales.prod() - desired_geometric_average).pow(2)
+            diversity_loss = -generator_scales.var()  # negative variance = penalize low spread
+            g_loss = criterion(discriminator(fake_imgs_g), real_labels) \
+                     + lambda_prod * product_loss \
+                     + lambda_div * diversity_loss
+            #g_loss = criterion(discriminator(fake_imgs_g), real_labels) + lambda_prod * product_loss
+            opt_g.zero_grad()
+            g_loss.backward()
+            opt_g.step()
+
+        print(f"Epoch [{epoch+1}/{epochs}] | D: {d_loss.item():.4f} | G: {g_loss.item():.4f}")
+        print(generator_scales)
+
+    return generator_scales

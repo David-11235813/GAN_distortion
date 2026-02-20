@@ -7,16 +7,17 @@
 # python -m pip install --no-cache-dir --upgrade --index-url https://download.pytorch.org/whl/cu126 torch torchvision torchaudio
 
 from utilise_dataset import get_default_dataloader, get_singular_dataloader
-from autoencoder_utils import train_autoencoder, show_autoencoder_reconstruction, save_autoencoder, load_autoencoder, show_autoencoder_partial_reconstructions
+from autoencoder_utils import train_autoencoder, show_autoencoder_reconstruction, save_autoencoder, load_autoencoder, show_autoencoder_partial_reconstructions, show_autoencoder_partial_reconstructions_scaled
+from GAN_feature_scales_trainer import train_gan_scales
 import my_filesystem as files
 
 
-_compression_size=12
+_compression_size=32
 _is_grayscale = True
 _epochs=50
 _directory=['AutoencodersTesting']
 _filename=f'autoencoder{'_gray' if _is_grayscale else ''}_size{_compression_size}_{_epochs}ep.pth'
-#_filename='autoencoder_size32_50ep.pth'
+#_filename='autoencoder_gray_size8_100ep.pth'
 
 def produce_autoencoder(compression_size=_compression_size, is_grayscale=_is_grayscale, epochs=_epochs, directory=_directory, filename=_filename) -> str:
     dataloader = get_default_dataloader(files.dir_DATASET_FACES, is_grayscale)
@@ -41,11 +42,11 @@ def main1():
     """
     generate and test the autoencoder, show results (and optionally save)
     """
-    #autoencoder_path = files.get_model_path_from_directory(directory=_directory, filename=_filename)
+    autoencoder_path = files.get_model_path_from_directory(directory=_directory, filename=_filename)
     #autoencoder_path = produce_autoencoder(compression_size=16, is_grayscale=True, epochs=10, directory=_directory, filename='autoencoder_gray_size16_10ep.pth') #uncomment for training new autoencoder; leave commented for loading previous one
 
-    autoencoder_path = produce_autoencoder() #preset parameters
-    use_autoencoder(autoencoder_path, 5)
+    #autoencoder_path = produce_autoencoder() #preset parameters
+    use_autoencoder(autoencoder_path, 2)
 
 
 #singular features
@@ -57,14 +58,26 @@ def main2():
         img_save_folder=files.prepare_folder(files.join_path_unsupervised(files.dir_MID, 'IMG_TEST'))
     )
 
+def main3():
+    autoencoder_path = files.get_model_path_from_directory(_directory, _filename)
+    autoencoder = load_autoencoder(autoencoder_path)
+    dataloader = get_default_dataloader(files.dir_DATASET_FACES, autoencoder.is_grayscale)
+
+    scales = train_gan_scales(autoencoder, dataloader, epochs=50)
+
+
+    show_autoencoder_partial_reconstructions_scaled(autoencoder, scales, howmany_plots=5, save=True,
+        img_save_folder=files.prepare_folder(files.join_path_unsupervised(files.dir_MID, 'IMG_TEST'))
+    )
 
 
 if __name__ == "__main__":
-    #main1()
-    main2()
+    main1()
+    #main2()
+    main3()
 
     #todo:
-    # show reproduced features
+    # train second version decoder:
 
 
     pass
