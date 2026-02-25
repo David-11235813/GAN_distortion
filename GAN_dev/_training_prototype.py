@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 
-import __my_filesystem as files
+import my_filesystem as files
 
 
 # ---- Hyperparameters ----
@@ -107,8 +107,11 @@ for epoch in range(epochs):
 #torch.save(D.state_dict(), os.path.join(run_dir, 'discriminator.pth'))
 
 model_save_dir = ['prototype']
-g_path = files.save_model(G, model_save_dir, 'generator.pth', True)
-d_path = files.save_model(D, model_save_dir, 'discriminator.pth', False)
+g_path = files.prepare_model_save_path(model_save_dir, 'generator.pth', True)
+d_path = files.prepare_model_save_path(model_save_dir, 'discriminator.pth', False)
+
+torch.save(G.state_dict(), g_path)
+torch.save(D.state_dict(), d_path)
 
 #load_and_test_model_from_path(g_path)
 
