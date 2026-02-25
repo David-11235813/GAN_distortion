@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.optim as optim
 import numpy as np
 
-from utilise_dataset import get_default_dataloader, get_singular_dataloader
+from utilise_dataset import get_default_dataloader, get_singular_dataloader, load_single_image_as_batch_of_1
 from img_display_utils import display_autoencoder_reconstructions, display_autoencoder_reconstructions_OneImg
 import my_filesystem as files
 
@@ -237,7 +237,7 @@ def return_encoder_output(autoencoder:Autoencoder, dataloader) -> torch.Tensor:
         features = autoencoder.encode(images)
         print(f"Feature vector size: {features.shape}")
         return features
-
+'''
 #not useful
 def return_encoder_output_of_given_batch(autoencoder:Autoencoder, img_batch) -> torch.Tensor:
     autoencoder.eval()
@@ -246,7 +246,7 @@ def return_encoder_output_of_given_batch(autoencoder:Autoencoder, img_batch) -> 
         features = autoencoder.encode(img_batch)
         print(f"Feature vector size: {features.shape}")
         return features
-'''
+
 
 def return_decoder_output(autoencoder:Autoencoder, features):
     autoencoder.eval()

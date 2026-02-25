@@ -109,3 +109,8 @@ def test_dataloader(dataloader: DataLoader, max_range : int=5):
         plt.axis("off")
         plt.show()
 
+
+def load_single_image_as_batch_of_1(image_path, is_grayscale=False, resize_image_val=128):
+    transform = image_preprocessing_transform(resize_image_val) if not is_grayscale else image_preprocessing_transform_grayscale(resize_image_val)
+    img = Image.open(image_path).convert("L" if is_grayscale else "RGB")
+    return transform(img).unsqueeze(0)  # add batch dim -> [1, C, H, W]
