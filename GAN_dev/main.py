@@ -14,7 +14,7 @@ import my_filesystem as files
 
 _compression_size=16
 _is_grayscale = True
-_epochs=10
+_epochs=100
 _directory=['AutoencodersTesting']
 _filename=f'autoencoder{'_gray' if _is_grayscale else ''}_size{_compression_size}_{_epochs}ep.pth'
 #_filename='autoencoder_gray_size8_100ep.pth'
