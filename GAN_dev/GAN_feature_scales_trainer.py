@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from autoencoder_utils import Autoencoder, return_encoder_output, return_decoder_output, return_encoder_output_of_given_batch
+from autoencoder_utils import Autoencoder
+import my_filesystem as files
 
 device="cuda" if torch.cuda.is_available() else "cpu"
 
@@ -41,11 +42,11 @@ def train_gan_scales(
     dataloader,
     epochs=50,
     #lr=0.0002,
-    device=device,
+    #device=device,
 ):
     generator.to(device)
 
-    discriminator = Discriminator(128, channels_nr = 3 if not generator.is_grayscale else 1)
+    discriminator = Discriminator(dataloader.resize_image_val, channels_nr = 3 if not generator.is_grayscale else 1)
     discriminator.to(device)
 
     generator_scales = torch.ones(generator.latent_dim, requires_grad=True, device=device)
@@ -88,7 +89,7 @@ def train_gan_scales(
                 encoded = generator.encode(real_imgs)
 
             decoded_og = generator.decode(encoded).detach()
-            fake_imgs = generator.decode(encoded * generator_scales).detach()  # detached for D
+            fake_imgs = generator.decode(encoded, generator_scales).detach()  # detached for D
 
             d_loss = (
                     criterion(discriminator(decoded_og), real_labels) + # prevents decoder to learn decoding artifacts and overpowering learning
@@ -104,7 +105,7 @@ def train_gan_scales(
             # ── Train Generator ──────────────────────────────────────────────
             with torch.no_grad():
                 encoded = generator.encode(real_imgs)  # encoder doesn't need grads
-            fake_imgs_g = generator.decode(encoded * generator_scales)  # no detach — grads flow to generator_scales
+            fake_imgs_g = generator.decode(encoded, generator_scales)  # no detach — grads flow to generator_scales
 
             #g_loss = criterion(discriminator(fake_imgs_g), real_labels)
             product_loss = (generator_scales.prod() - desired_geometric_average).pow(2)
@@ -121,3 +122,19 @@ def train_gan_scales(
         print(generator_scales)
 
     return generator_scales
+
+
+def save_GAN_scales(scales:torch.Tensor, scales_save_folder:str, scales_filename:str=None) -> str:
+    if scales_filename is None or scales_filename == '':
+        scales_filename = 'scales_untitled.pth'
+    name, ext = files.split_ext(scales_filename)
+    scales_filename = f'{name}_{files.get_datetime_str()}_{ext}'
+
+    scales_save_path = files.join_path_unsupervised(scales_save_folder, scales_filename)
+
+    torch.save(scales, scales_save_path)
+    return scales_save_path
+
+
+def load_GAN_scales(path: str) -> torch.Tensor:
+    return torch.load(path, map_location=device)

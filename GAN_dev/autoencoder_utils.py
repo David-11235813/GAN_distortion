@@ -85,18 +85,25 @@ class Autoencoder(nn.Module):
         self.encoder = Encoder(latent_dim, channels_nr)
         self.decoder = Decoder(latent_dim, channels_nr)
 
-    def forward(self, x):
-        features = self.encoder(x)
-        reconstruction = self.decoder(features)
-        return reconstruction, features
 
+    def forward(self, x, scales=None):
+        features = self.encode(x)
+        reconstruction = self.decode(features, scales)
+        return reconstruction, features
 
     def encode(self, x):
         features = self.encoder(x)
         return features
 
-    def decode(self, features):
-        reconstruction = self.decoder(features)
+    def decode(self, features, scales=None):
+        try:
+            if scales is not None and scales.shape != (self.latent_dim,):
+                raise ValueError(f"Scales shape {tuple(scales.shape)} does not match latent_dim ({self.latent_dim},)")
+        except ValueError as e:
+            print(f"Invalid scales, scaling disabled: {e}")
+            scales = None
+
+        reconstruction = self.decoder(features * scales if scales is not None else features)
         return reconstruction
 
 
@@ -182,6 +189,7 @@ def show_autoencoder_partial_reconstructions(autoencoder:Autoencoder, howmany_pl
             if save: fig.savefig(files.join_path_unsupervised(img_save_folder, f'_OneImg_features{'_gray' if autoencoder.is_grayscale else ''}_{autoencoder.latent_dim}_{idx}.png'))
             print(f"Feature vector size: {features.shape}")
 
+
 def show_autoencoder_partial_reconstructions_scaled(autoencoder:Autoencoder, scales, howmany_plots=1, save:bool=False, img_save_folder:str= ''):
     singular_dataloader = get_singular_dataloader(files.dir_DATASET_FACES, autoencoder.is_grayscale)
     autoencoder.eval()
@@ -219,7 +227,7 @@ def show_autoencoder_partial_reconstructions_scaled(autoencoder:Autoencoder, sca
             if save: fig.savefig(files.join_path_unsupervised(img_save_folder, f'_{idx}_scaled_OneImg_features{'_gray' if autoencoder.is_grayscale else ''}_{autoencoder.latent_dim}.png'))
             print(f"Feature vector size: {features.shape}")
 
-
+'''
 #not useful
 def return_encoder_output(autoencoder:Autoencoder, dataloader) -> torch.Tensor:
     autoencoder.eval()
@@ -238,6 +246,7 @@ def return_encoder_output_of_given_batch(autoencoder:Autoencoder, img_batch) -> 
         features = autoencoder.encode(img_batch)
         print(f"Feature vector size: {features.shape}")
         return features
+'''
 
 def return_decoder_output(autoencoder:Autoencoder, features):
     autoencoder.eval()

@@ -31,7 +31,7 @@ def prepare_folder(dir_path: str) -> str:
     return dir_path
 
 
-def get_default_img_folder(file_path:str) -> str:
+def get_default_img_folder_of_model(file_path:str) -> str:
     path_to_folder_name = os.path.splitext(file_path)[0]
     return prepare_folder(path_to_folder_name)
 
@@ -49,3 +49,10 @@ def prepare_model_save_path(directory: list[str], filename:str, new_timedate:boo
 
     save_path = os.path.join(save_dir, filename)
     return save_path
+
+def get_datetime_str() -> str:
+    return time.strftime('%Y%m%d-%H%M%S')
+
+def split_ext(path: str):
+    name, ext = os.path.splitext(path)
+    return name, ext
