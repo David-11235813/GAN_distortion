@@ -11,13 +11,14 @@ from autoencoder_utils import train_autoencoder, show_autoencoder_reconstruction
 from GAN_feature_scales_trainer import train_gan_scales, save_GAN_scales, load_GAN_scales
 import my_filesystem as files
 
-
 _compression_size=16
 _is_grayscale = True
 _epochs=100
 _directory=['AutoencodersTesting']
 _filename=f'autoencoder{'_gray' if _is_grayscale else ''}_size{_compression_size}_{_epochs}ep.pth'
 #_filename='autoencoder_gray_size8_100ep.pth'
+
+_scales_folder = files.get_default_img_folder_of_model(files.get_model_path_from_directory(_directory, _filename))
 
 def produce_autoencoder(compression_size=_compression_size, is_grayscale=_is_grayscale, epochs=_epochs, directory=_directory, filename=_filename) -> str:
     dataloader = get_default_dataloader(files.dir_DATASET_FACES, is_grayscale)
@@ -55,13 +56,13 @@ def main2():
         img_save_folder=files.prepare_folder(files.join_path_unsupervised(files.dir_MID, 'IMG_TEST'))
     )
 
+
 def main3():
     autoencoder_path = files.get_model_path_from_directory(_directory, _filename)
     autoencoder = load_autoencoder(autoencoder_path)
     dataloader = get_default_dataloader(files.dir_DATASET_FACES, autoencoder.is_grayscale)
 
     scales = train_gan_scales(autoencoder, dataloader, epochs=10)
-    # todo: save the scales in a file
 
     directory = _directory
     filename = _filename
@@ -74,12 +75,25 @@ def main3():
 
     print(load_GAN_scales(save_path))
 
+    return save_path
 
+
+def main4(scales_save_path:str):
+    autoencoder_path = files.get_model_path_from_directory(_directory, _filename)
+    autoencoder = load_autoencoder(autoencoder_path)
+    scales = load_GAN_scales(scales_save_path)
+
+    show_autoencoder_partial_reconstructions_scaled(autoencoder, scales=scales, howmany_plot_pairs=5, save=True,
+        img_save_folder=files.prepare_folder(files.join_path_unsupervised(files.dir_MID, 'IMG_TEST'))
+    )
 
 if __name__ == "__main__":
     #main1()     # generate and test the autoencoder, show results (and optionally save)
     #main2()     # show autoencoder's partial reconstructions
-    main3()     # train GAN-autoencoder (no saving)
+
+    #scales_save_path = main3()     # train GAN-autoencoder
+    scales_save_path = files.join_path_unsupervised(_scales_folder, 'scales_untitled_20260225-163112_.pth')
+    main4(scales_save_path)     # use scaled GAN-autoencoder: show partial reconstructions
     #todo:
     # incorporate decoder-scaling into autoencoder's structure (easy qol)
     # fix paths and folders

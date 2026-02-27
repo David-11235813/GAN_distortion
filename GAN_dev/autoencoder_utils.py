@@ -190,11 +190,11 @@ def show_autoencoder_partial_reconstructions(autoencoder:Autoencoder, howmany_pl
             print(f"Feature vector size: {features.shape}")
 
 
-def show_autoencoder_partial_reconstructions_scaled(autoencoder:Autoencoder, scales, howmany_plots=1, save:bool=False, img_save_folder:str= ''):
+def show_autoencoder_partial_reconstructions_scaled(autoencoder:Autoencoder, scales, howmany_plot_pairs=1, save:bool=False, img_save_folder:str= ''):
     singular_dataloader = get_singular_dataloader(files.dir_DATASET_FACES, autoencoder.is_grayscale)
     autoencoder.eval()
     with torch.no_grad():
-        for idx in range(howmany_plots):
+        for idx in range(howmany_plot_pairs):
             original_img, _ = next(iter(singular_dataloader))
             original_img = original_img.to(device)
 
@@ -239,12 +239,12 @@ def return_encoder_output(autoencoder:Autoencoder, dataloader) -> torch.Tensor:
         return features
 '''
 #not useful
-def return_encoder_output_of_given_batch(autoencoder:Autoencoder, img_batch) -> torch.Tensor:
+def return_encoder_output_of_given_batch(autoencoder:Autoencoder, img_batch, quiet:bool=False) -> torch.Tensor:
     autoencoder.eval()
     with torch.no_grad():
         img_batch = img_batch.to(device)
         features = autoencoder.encode(img_batch)
-        print(f"Feature vector size: {features.shape}")
+        if not quiet: print(f"Feature vector size: {features.shape}")
         return features
 
 

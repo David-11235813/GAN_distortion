@@ -36,10 +36,10 @@ Projekt składa się z dwóch części: GAN_dev (konsolowy UI) i GAN_user (GUI);
 Celem części GAN_dev projektu jest zapewnienie następujących funkcjonalności:
 1) ustawienia zasady działania i parametrów generatora (przekształcenia afiniczne w przestrzeni cech)
 2) trening modelu sieci GAN z użyciem wybranego datasetu
-3) zapis wytrenowanego modelu (pary: Generator-Dyskryminator) do folderu middleman_folder
+3) zapis wytrenowanego modelu do folderu middleman_folder
+4) plik GAN_dev.ipynb do reprezentacji wyników
 
-
-## GAN_user - końcowy efekt
+## GAN_user - końcowy efekt [tymczasowo nieużywany; do używania i prezentacji służy plik GAN_dev.ipynb z części developerskiej]
 
 Celem części GAN_user projektu jest zapewnienie następujących funkcjonalności:
 1) wybór i podgląd obrazu który ma zostać zniekształcony
