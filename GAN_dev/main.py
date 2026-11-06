@@ -38,8 +38,16 @@ def use_autoencoder(load_path:str, howmany_plots=1):
         img_save_folder=files.get_default_img_folder_of_model(load_path)
     )
 
+
+
+
+
 #-----------------------------------------------------------------------------------------------------------------------
 def main1():
+    '''
+    wyprodukuj wytrenowany autoenkoder i zapisz go.
+    następnie przetestuj jego skuteczność (opcjonalnie zapisz wyniki)
+    '''
     #autoencoder_path = files.get_model_path_from_directory(directory=_directory, filename=_filename)
     #autoencoder_path = produce_autoencoder(compression_size=16, is_grayscale=True, epochs=10, directory=_directory, filename='autoencoder_gray_size16_10ep.pth') #uncomment for training new autoencoder; leave commented for loading previous one
 
@@ -49,6 +57,10 @@ def main1():
 
 #singular features
 def main2():
+    '''
+    wczytaj istniejący autoenkoder z pliku.
+    pokaż pojedyncze cechy które wyłuskał autoenkoder (pozostałe ustaw na 0)
+    '''
     autoencoder_path = files.get_model_path_from_directory(_directory, _filename)
     autoencoder = load_autoencoder(autoencoder_path)
 
@@ -58,6 +70,13 @@ def main2():
 
 
 def main3():
+    '''
+    wczytaj istniejący autoenkoder z pliku.
+    przygotuj dataloader kompatybilny z wytrenowanym autoenkoderem.
+    wytrenuj na bazie autoenkodera dyskryminator GAN, który zwróci optymalne przeskalowanie wybranych cech autoenkodera.
+    zapisz te skale do pliku (oryginalny autoenkoder pozostaje bez zmian).
+    :return: ścieżka do zapisanych skal.
+    '''
     autoencoder_path = files.get_model_path_from_directory(_directory, _filename)
     autoencoder = load_autoencoder(autoencoder_path)
     dataloader = get_default_dataloader(files.dir_DATASET_FACES, autoencoder.is_grayscale)
@@ -79,6 +98,12 @@ def main3():
 
 
 def main4(scales_save_path:str):
+    '''
+    załaduj autoenkoder z pliku.
+    załaduj skale cech wytrenowane na powyższym autoenkoderze przez GAN.
+    pokaż przeskalowane w przestrzeni cech rekonstrukcje obrazów, a obok oryginalne rekonstrukcje (dla porównania).
+    :param scales_save_path: ścieżka do zapisanych skal (utworzona np w main3)
+    '''
     autoencoder_path = files.get_model_path_from_directory(_directory, _filename)
     autoencoder = load_autoencoder(autoencoder_path)
     scales = load_GAN_scales(scales_save_path)
